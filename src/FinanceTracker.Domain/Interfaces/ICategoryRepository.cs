@@ -9,7 +9,7 @@ public interface ICategoryRepository
     Task<IEnumerable<Category>> GetAllAsync();
     Task<Category> AddAsync(Category category);
     Task<Category> UpdateAsync(Category category);
-    Task DeleteAsync(Category category);
+    Task DeleteAsync(Guid id);
     
     Task<IEnumerable<Category>> GetByTypeAsync(TransactionType transactionType);
     Task<IEnumerable<Category>> GetByCategoryTypeAsync(CategoryType transactionType);
