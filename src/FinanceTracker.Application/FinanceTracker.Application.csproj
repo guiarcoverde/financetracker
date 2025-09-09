@@ -6,7 +6,6 @@
 
   <ItemGroup>
     <Folder Include="Mappings\" />
-    <Folder Include="Services\" />
     <Folder Include="Validators\" />
   </ItemGroup>
 
