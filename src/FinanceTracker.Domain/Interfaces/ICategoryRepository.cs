@@ -12,7 +12,7 @@ public interface ICategoryRepository
     Task DeleteAsync(Guid id);
     
     Task<IEnumerable<Category>> GetByTypeAsync(TransactionType transactionType);
-    Task<IEnumerable<Category>> GetByCategoryTypeAsync(CategoryType transactionType);
+    Task<IEnumerable<Category>> GetByCategoryTypeAsync(CategoryType categoryType);
     Task<Category?> GetByNameAsync(string name);
     
     Task<bool> ExistsAsync(Guid id);
