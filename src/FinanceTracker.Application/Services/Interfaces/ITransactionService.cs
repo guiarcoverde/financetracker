@@ -7,8 +7,8 @@ namespace FinanceTracker.Application.Services.Interfaces;
 public interface ITransactionService
 {
     Task<TransactionDto> GetByIdAsync(Guid id);
-    Task<TransactionDto> CreateAsync(CreateTransactionDto createTransactionDto);
-    Task<TransactionDto> UpdateAsync(Guid id, UpdateTransactionDto updateTransactionDto);
+    Task<TransactionDto> CreateAsync(CreateTransactionDto createDto);
+    Task<TransactionDto> UpdateAsync(Guid id, UpdateTransactionDto updateDto);
     Task DeleteAsync(Guid id);
     
     Task<PagedResultDto<TransactionDto>> GetPagedAsync(TransactionFilterDto filter);
@@ -25,8 +25,8 @@ public interface ITransactionService
     Task<IEnumerable<TransactionDto>> SearchAsync(string searchTerm);
     Task<PagedResultDto<TransactionDto>> SearchPagedAsync(string searchTerm, int page = 1, int pageSize = 10);
     Task<bool> ExistsAsync(Guid id);
-    Task ValidateTransactionAsync(CreateTransactionDto createTransactionDto);
-    Task ValidateTransactionAsync(Guid id,UpdateTransactionDto updateTransactionDto);
+    Task ValidateTransactionAsync(CreateTransactionDto createDto);
+    Task ValidateTransactionAsync(Guid id,UpdateTransactionDto updateDto);
     
     Task<decimal> GetTotalByTypeAsync(TransactionType transactionType);
     Task<decimal> GetTotalByTypeAndPeriodAsync(TransactionType transactionType, DateTime startDate, DateTime endDate);
