@@ -1,16 +1,34 @@
 using FinanceTracker.Infrastructure.Data;
 using FinanceTracker.Infrastructure.Migrations;
 using Microsoft.EntityFrameworkCore;
+using static FinanceTracker.Infrastructure.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
+ValidateConfiguration(builder.Configuration);
+
 builder.Services.AddControllers();
-
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new()
+    {
+        Title = "Finance Tracker API",
+        Version = "v1",
+        Description = "API para gerenciamento de transações financeiras"
+    });
+});
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DevConnection")));
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAngular", policy =>
+    {
+        policy.WithOrigins("http://localhost:4200")
+            .AllowAnyHeader()
+            .AllowCredentials()
+            .AllowAnyMethod();
+    });
+});
 
 var app = builder.Build();
 
@@ -19,7 +37,6 @@ app.UseSwaggerUI();
 
 if (app.Environment.IsDevelopment())
 {
-    await MigrateDatabase();
 }
 
 app.UseHttpsRedirection();
@@ -30,13 +47,5 @@ app.MapControllers();
 
 app.Run();
 
-async Task MigrateDatabase()
-{
-    await using var scope = app.Services.CreateAsyncScope();
-    await DatabaseMigrations.MigrateDatabase(scope.ServiceProvider);
-}
 
-namespace FinanceTracker.API
-{
-    public partial class Program { }
-}
+

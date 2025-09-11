@@ -147,4 +147,41 @@ public static class DependencyInjection
         // var jwtKey = configuration["JwtSettings:Key"];
         // if (string.IsNullOrEmpty(jwtKey)) { ... }
     }
+
+    public static IServiceCollection AddInfrastructureForDevelopment(IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddInfrastructure(configuration);
+
+        services.Configure<DbContextOptions>(options => { });
+
+        return services;
+    }
+    
+    public static IServiceCollection AddInfrastructureForProduction(
+        this IServiceCollection services, 
+        IConfiguration configuration)
+    {
+        services.AddInfrastructure(configuration);
+        
+        services.AddDbContextPool<ApplicationDbContext>(options =>
+            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+
+        return services;
+    }
+    
+    public static IServiceCollection AddInfrastructureForTesting(
+        this IServiceCollection services,
+        string connectionString)
+    {
+        
+        services.AddDbContext<ApplicationDbContext>(options =>
+            options.UseNpgsql(connectionString));
+
+        
+        AddRepositories(services);
+        AddApplicationServices(services);
+        AddMappings(services);
+
+        return services;
+    }
 }
