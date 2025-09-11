@@ -20,6 +20,12 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        AddDatabase(services, configuration);
+        AddRepositories(services);
+        AddApplicationServices(services);
+        AddMappings(services);
+        AddValidations(services);
+        
         return services;
     }
     
@@ -148,7 +154,7 @@ public static class DependencyInjection
         // if (string.IsNullOrEmpty(jwtKey)) { ... }
     }
 
-    public static IServiceCollection AddInfrastructureForDevelopment(IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddInfrastructureForDevelopment(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddInfrastructure(configuration);
 
