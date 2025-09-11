@@ -93,101 +93,235 @@ public class TransactionRepository(ApplicationDbContext context) : ITransactionR
         .OrderByDescending(t => t.TransactionDate)
         .ThenByDescending(t => t.CreatedAt)
         .ToListAsync();
+    
+    public async Task<IEnumerable<Transaction>> GetByMonthAsync(int month, int year) 
+        => await _context.Transactions
+            .AsNoTracking()
+            .Include(t => t.Category)
+            .Where(t => t.TransactionDate.Month == month && t.TransactionDate.Year == year)
+            .OrderByDescending(t => t.TransactionDate)
+            .ThenByDescending(t => t.CreatedAt)
+            .ToListAsync();
 
-    //TODO: Finalizar implementação dos métodos abaixo
-    public async Task<IEnumerable<Transaction>> GetByMonthAsync(int month, int year)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task<IEnumerable<Transaction>> GetByYearAsync(int year)
-    {
-        throw new NotImplementedException();
-    }
-
+    public async Task<IEnumerable<Transaction>> GetByYearAsync(int year) 
+        => await _context.Transactions
+            .AsNoTracking()
+            .Include(t => t.Category)
+            .Where(t => t.TransactionDate.Year == year)
+            .OrderByDescending(t => t.TransactionDate)
+            .ThenByDescending(t => t.CreatedAt)
+            .ToListAsync();
     public async Task<IEnumerable<Transaction>> GetTodayTransactionsAsync()
     {
-        throw new NotImplementedException();
+        var today = DateTime.Today;
+        return await GetByDateRangeAsync(today, today);
     }
 
     public async Task<IEnumerable<Transaction>> GetCurrentMonthTransactionsAsync()
     {
-        throw new NotImplementedException();
+        var now = DateTime.Now;
+        var startOfMonth = new DateTime(now.Year, now.Month, 1);
+        var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
+        return await GetByDateRangeAsync(startOfMonth, endOfMonth);
     }
 
-    public async Task<IEnumerable<Transaction>> GetByAmountRangeAsync(decimal minAmount, decimal maxAmount)
-    {
-        throw new NotImplementedException();
-    }
+    public async Task<IEnumerable<Transaction>> GetByAmountRangeAsync(decimal minAmount, decimal maxAmount) 
+        => await _context.Transactions
+            .AsNoTracking()
+            .Include(t => t.Category)
+            .Where(t => t.Amount.Amount >= minAmount && t.Amount.Amount <= maxAmount)
+            .OrderByDescending(t => t.TransactionDate)
+            .ThenByDescending(t => t.CreatedAt)
+            .ToListAsync();
 
-    public async Task<IEnumerable<Transaction>> GetByCategoryAndDateRangeAsync(Guid categoryId, DateTime startDate, DateTime endDate)
-    {
-        throw new NotImplementedException();
-    }
+    public async Task<IEnumerable<Transaction>> GetByCategoryAndDateRangeAsync(
+        Guid categoryId, 
+        DateTime startDate, 
+        DateTime endDate
+        ) 
+        => await _context.Transactions
+            .AsNoTracking()
+            .Include(t => t.Category)
+            .Where(t => t.Category != null &&
+                        t.TransactionDate >= startDate.Date &&
+                        t.TransactionDate <= endDate.Date)
+            .OrderByDescending(t => t.TransactionDate)
+            .ThenByDescending(t => t.CreatedAt)
+            .ToListAsync();
 
-    public async Task<IEnumerable<Transaction>> GetByTypeAndDateRange(TransactionType transactionType, DateTime startDate, DateTime endDate)
-    {
-        throw new NotImplementedException();
-    }
+
+    public async Task<IEnumerable<Transaction>> GetByTypeAndDateRange(
+        TransactionType transactionType, 
+        DateTime startDate, 
+        DateTime endDate)
+        => await _context.Transactions
+            .AsNoTracking()
+            .Include(t => t.Category)
+            .Where(t => t.TransactionDate >= startDate.Date &&
+                        t.TransactionDate <= endDate.Date &&
+                        t.Category != null &&
+                        ((transactionType == TransactionType.Income &&
+                          t.Category.CategoryType >= CategoryType.Salary) ||
+                         (transactionType == TransactionType.Expense &&
+                          t.Category.CategoryType < CategoryType.Salary)))
+            .OrderByDescending(t => t.TransactionDate)
+            .ThenByDescending(t => t.CreatedAt)
+            .ToListAsync();
 
     public async Task<IEnumerable<Transaction>> SearchByDescriptionAsync(string searchTerm)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrWhiteSpace(searchTerm))
+            return [];
+        
+        var normalizedSearchTerm = searchTerm.Trim().ToLower();
+        
+        return await _context.Transactions
+            .AsNoTracking()
+            .Include(t => t.Category)
+            .Where(t => t.Description.ToLower().Contains(normalizedSearchTerm))
+            .OrderByDescending(t => t.TransactionDate)
+            .ThenByDescending(t => t.CreatedAt)
+            .ToListAsync();
     }
 
-    public async Task<bool> ExistsAsync(Guid id)
-    {
-        throw new NotImplementedException();
-    }
+    public async Task<bool> ExistsAsync(Guid id) 
+        => await _context.Transactions
+            .AsNoTracking()
+            .AnyAsync(t => t.Id == id);
 
     public async Task<decimal> GetTotalByTypeAsync(TransactionType transactionType)
     {
-        throw new NotImplementedException();
+        var transactions = await _context.Transactions
+            .AsNoTracking()
+            .Include(t => t.Category)
+            .Where(t => t.Category != null &&
+                        ((transactionType == TransactionType.Income &&
+                          t.Category.CategoryType >= CategoryType.Salary) ||
+                         (transactionType == TransactionType.Expense &&
+                          t.Category.CategoryType < CategoryType.Salary)))
+            .ToListAsync();
+        
+        return transactions.Sum(t => t.Amount.Amount);
     }
 
     public async Task<decimal> GetTotalByTypeAndDateRangeAsync(TransactionType transactionType, DateTime startDate, DateTime endDate)
     {
-        throw new NotImplementedException();
+        var transactions = await _context.Transactions
+            .AsNoTracking()
+            .Include(t => t.Category)
+            .Where(t => t.TransactionDate >= startDate.Date &&
+                        t.TransactionDate <= endDate.Date &&
+                        t.Category != null &&
+                        ((transactionType == TransactionType.Income &&
+                          t.Category.CategoryType >= CategoryType.Salary) ||
+                         (transactionType == TransactionType.Expense &&
+                          t.Category.CategoryType < CategoryType.Salary)))
+            .ToListAsync();
+        
+        return transactions.Sum(t => t.Amount.Amount);
     }
 
     public async Task<decimal> GetTotalByCategoryAsync(Guid categoryId)
     {
-        throw new NotImplementedException();
+        var transactions = await _context.Transactions
+            .AsNoTracking()
+            .Where(t => t.CategoryId == categoryId)
+            .ToListAsync();
+        
+        return transactions.Sum(t => t.Amount.Amount);
     }
 
     public async Task<decimal> GetBalanceAsync()
     {
-        throw new NotImplementedException();
+        var totalIncome = await GetTotalByTypeAsync(TransactionType.Income);
+        var totalExpense = await GetTotalByTypeAsync(TransactionType.Expense);
+        return totalIncome - totalExpense;
     }
 
     public async Task<decimal> GetBalanceByDateRangeAsync(DateTime startDate, DateTime endDate)
     {
-        throw new NotImplementedException();
+        var totalIncome = await GetTotalByTypeAndDateRangeAsync(TransactionType.Income, startDate, endDate);
+        var totalExpense = await GetTotalByTypeAndDateRangeAsync(TransactionType.Expense, startDate, endDate);
+        return totalIncome - totalExpense;
     }
 
     public async Task<(IEnumerable<Transaction> Transactions, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize)
     {
-        throw new NotImplementedException();
+        var query = _context.Transactions
+            .AsNoTracking()
+            .Include(t => t.Category)
+            .OrderByDescending(t => t.TransactionDate)
+            .ThenByDescending(t => t.CreatedAt);
+        
+        var totalCount = await query.CountAsync();
+        
+        var transactions = await query
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        
+        return (transactions, totalCount);
     }
 
-    public async Task<(IEnumerable<Transaction> Transactions, int TotalCount)> GetPagedWithFiltersAsync(int page, int pageSize, Guid? categoryId = null, TransactionType? transactionType = null,
-        DateTime? startDate = null, DateTime? endDate = null, string? searchTerm = null)
+    public async Task<(IEnumerable<Transaction> Transactions, int TotalCount)> GetPagedWithFiltersAsync(
+        int page, 
+        int pageSize, 
+        Guid? categoryId = null, 
+        TransactionType? transactionType = null,
+        DateTime? startDate = null, 
+        DateTime? endDate = null, 
+        string? searchTerm = null)
     {
-        throw new NotImplementedException();
+        var query = _context.Transactions
+            .AsNoTracking()
+            .Include(t => t.Category)
+            .AsQueryable();
+
+        if (categoryId.HasValue)
+            query = query.Where(t => t.CategoryId == categoryId.Value);
+        
+        if (startDate.HasValue)
+            query = query.Where(t => t.TransactionDate >= startDate.Value);
+        
+        if(endDate.HasValue)
+            query.Where(t => t.TransactionDate <= endDate.Value);
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var normalizedSearchTerm = searchTerm.Trim().ToLower();
+            query = query.Where(t => t.Description.ToLower().Contains(normalizedSearchTerm));
+        }
+        
+        query = query.OrderByDescending(t => t.TransactionDate)
+            .ThenByDescending(t => t.CreatedAt);
+        
+        var totalCount = await query.CountAsync();
+        
+        var transactions = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        
+        return (transactions, totalCount);
     }
 
-    public async Task<int> CountAsync()
-    {
-        throw new NotImplementedException();
-    }
+    public async Task<int> CountAsync() 
+        => await _context.Transactions
+        .AsNoTracking()
+        .CountAsync();
 
     public async Task<int> CountByTypeAsync(TransactionType transactionType)
-    {
-        throw new NotImplementedException();
-    }
+        => await _context.Transactions
+            .AsNoTracking()
+            .Include(t => t.Category)
+            .CountAsync(t => t.Category != null &&
+                             ((transactionType == TransactionType.Income &&
+                               t.Category.CategoryType >= CategoryType.Salary) ||
+                              (transactionType == TransactionType.Expense &&
+                               t.Category.CategoryType < CategoryType.Salary)));
 
-    public async Task<int> CountByCategoryAsync(Guid categoryId)
-    {
-        throw new NotImplementedException();
-    }
+    public async Task<int> CountByCategoryAsync(Guid categoryId) 
+        => await _context.Transactions
+            .AsNoTracking()
+            .CountAsync(t => t.CategoryId == categoryId);
 }
