@@ -108,7 +108,7 @@ public class CategoryService(IUnitOfWork unitOfWork) : ICategoryService
             throw new DomainException($"Categoria com ID {id} não foi encontrada.");
 
         if (await _unitOfWork.Categories.HasTransactionAsync(id))
-            throw new DomainException("A categoria não pode ser deletada pois está associada a transações.");
+            throw new DomainException("Não é possível excluir uma categoria que possui transações associadas.");
     }
 
     public async Task<IEnumerable<CategoryDto>> GetCategoriesWithTransactionsAsync(Guid categoryId)
