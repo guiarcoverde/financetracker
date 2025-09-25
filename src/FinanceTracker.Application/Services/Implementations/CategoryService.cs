@@ -111,7 +111,7 @@ public class CategoryService(IUnitOfWork unitOfWork) : ICategoryService
             throw new DomainException("Não é possível excluir uma categoria que possui transações associadas.");
     }
 
-    public async Task<IEnumerable<CategoryDto>> GetCategoriesWithTransactionsAsync(Guid categoryId)
+    public async Task<IEnumerable<CategoryDto>> GetCategoriesWithTransactionsAsync()
     {
         var categories = await _unitOfWork.Categories.GetCategoriesWithTransactionsAsync();
         return categories.Select(c => c.Adapt<CategoryDto>()).ToList();

@@ -20,6 +20,6 @@ public interface ICategoryService
     Task<bool> CanDeleteAsync(Guid id);
     Task ValidateForDeletionAsync(Guid id);
     
-    Task<IEnumerable<CategoryDto>> GetCategoriesWithTransactionsAsync(Guid categoryId);
+    Task<IEnumerable<CategoryDto>> GetCategoriesWithTransactionsAsync();
     Task<int> GetTotalCountAsync();
 }
