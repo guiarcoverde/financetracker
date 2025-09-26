@@ -382,10 +382,10 @@ services:
 - [x] Categories API
 - [x] Testes unitários (Domain + Application)
 - [x] Documentação Swagger
+- [x] Transactions Controller
+- [x] Dashboard Controller
 
 ### 🔄 Em Progresso
-- [ ] Transactions Controller
-- [ ] Dashboard Controller
 - [ ] Middleware de tratamento de erros
 - [ ] Testes de integração
 
