@@ -30,6 +30,8 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddRouting(options => options.LowercaseUrls = true);
+
 if (builder.Environment.IsDevelopment())
 {
     builder.Services.AddInfrastructureForDevelopment(builder.Configuration);
