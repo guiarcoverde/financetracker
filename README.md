@@ -384,14 +384,14 @@ services:
 - [x] Documentação Swagger
 - [x] Transactions Controller
 - [x] Dashboard Controller
+- [x] Middleware de tratamento de erros
 
 ### 🔄 Em Progresso
-- [ ] Middleware de tratamento de erros
+- [ ] Autenticação e autorização
 - [ ] Testes de integração
 
 ### 📅 Próximas Funcionalidades
 - [ ] Frontend Angular completo
-- [ ] Autenticação e autorização
 - [ ] Exportação de relatórios (PDF/Excel)
 - [ ] Notificações e alertas
 - [ ] Metas e orçamentos
