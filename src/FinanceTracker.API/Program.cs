@@ -1,3 +1,4 @@
+using FinanceTracker.API.Middlewares;
 using FinanceTracker.Infrastructure.Data;
 using FinanceTracker.Infrastructure.Migrations;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +18,13 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1",
         Description = "API para gerenciamento de transações financeiras"
     });
+    
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        c.IncludeXmlComments(xmlPath);
+    }
 });
 
 builder.Services.AddCors(options =>
@@ -26,7 +34,8 @@ builder.Services.AddCors(options =>
         policy.WithOrigins("http://localhost:4200")
             .AllowAnyHeader()
             .AllowCredentials()
-            .AllowAnyMethod();
+            .AllowAnyMethod()
+            .WithExposedHeaders("X-Correlation-ID");
     });
 });
 
@@ -76,15 +85,27 @@ if (app.Environment.IsDevelopment())
             throw;
         }
     }
-
-
 }
+
+app.UseCustomMiddlewares();
 
 app.UseHttpsRedirection();
 
+app.UseCors("AllowAngular");
+
 app.UseAuthorization();
 
+app.MapHealthChecks("/health");
+
 app.MapControllers();
+
+app.MapGet("/info", (HttpContext context) => new
+{
+    Application = "Finance Tracker API",
+    Environment = app.Environment.EnvironmentName,
+    Timestamp = DateTime.UtcNow,
+    CorrelationId = context.GetCorrelationId()
+});
 
 app.Run();
 
