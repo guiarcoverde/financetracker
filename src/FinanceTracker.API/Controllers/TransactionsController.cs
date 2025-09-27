@@ -48,52 +48,38 @@ public class TransactionsController : ControllerBase
         [FromQuery] string? searchTerm = null
         )
     {
-        try
+        TransactionType? parsedTransactionType = null;
+        if (!string.IsNullOrEmpty(transactionType))
         {
-            TransactionType? parsedTransactionType = null;
-            if (!string.IsNullOrEmpty(transactionType))
+            if (!Enum.TryParse<TransactionType>(transactionType, true, out var type))
             {
-                if (!Enum.TryParse<TransactionType>(transactionType, true, out var type))
-                {
-                    _logger.LogWarning("Tipo de transação inválido: {TransactionType}", transactionType);
-                    return BadRequest(new
-                        { message = $"Tipo de transação inválido: {transactionType}. Use 'Income' ou 'Expense'" });
-                }
-
-                parsedTransactionType = type;
+                _logger.LogWarning("Tipo de transação inválido: {TransactionType}", transactionType);
+                return BadRequest(new
+                    { message = $"Tipo de transação inválido: {transactionType}. Use 'Income' ou 'Expense'" });
             }
 
-            var filter = new TransactionFilterDto
-            {
-                Page = page,
-                PageSize = pageSize,
-                CategoryId = categoryId,
-                TransactionType = parsedTransactionType,
-                StartDate = startDate,
-                EndDate = endDate,
-                SearchTerm = searchTerm
-            };
-
-            _logger.LogInformation("Buscando transações paginadas: Página {Page}, Tamanho {PageSize}", page, pageSize);
-            var result = await _transactionService.GetPagedAsync(filter);
-
-            _logger.LogInformation(
-                "Encontradas {TotalCount} transações, retornando página {Page} com {ItemCount} itens",
-                result.TotalCount, result.Page, result.Items.Count());
-
-            return Ok(result);
+            parsedTransactionType = type;
         }
-        catch (DomainException ex)
+
+        var filter = new TransactionFilterDto
         {
-            _logger.LogWarning(ex, "Filtros inválidos para busca de transações");
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao buscar transações paginadas");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao buscar transações" });
-        }
+            Page = page,
+            PageSize = pageSize,
+            CategoryId = categoryId,
+            TransactionType = parsedTransactionType,
+            StartDate = startDate,
+            EndDate = endDate,
+            SearchTerm = searchTerm
+        };
+
+        _logger.LogInformation("Buscando transações paginadas: Página {Page}, Tamanho {PageSize}", page, pageSize);
+        var result = await _transactionService.GetPagedAsync(filter);
+
+        _logger.LogInformation(
+            "Encontradas {TotalCount} transações, retornando página {Page} com {ItemCount} itens",
+            result.TotalCount, result.Page, result.Items.Count());
+
+        return Ok(result);
     }
     
     /// <summary>
@@ -108,25 +94,11 @@ public class TransactionsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<TransactionDto>> GetById(Guid id)
     {
-        try
-        {
-            _logger.LogInformation("Buscando transação com ID: {TransactionId}", id);
-            var transaction = await _transactionService.GetByIdAsync(id);
+        _logger.LogInformation("Buscando transação com ID: {TransactionId}", id);
+        var transaction = await _transactionService.GetByIdAsync(id);
 
-            _logger.LogInformation("Transação encontrada: {Description}", transaction.Description);
-            return Ok(transaction);
-        }
-        catch (DomainException ex)
-        {
-            _logger.LogWarning(ex, "Transação não encontrada: {TransactionId}", id);
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao buscar transação: {TransactionId}", id);            
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao buscar transação" });
-        }
+        _logger.LogInformation("Transação encontrada: {Description}", transaction.Description);
+        return Ok(transaction);
     }
 
     /// <summary>
@@ -139,22 +111,13 @@ public class TransactionsController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<TransactionDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<TransactionDto>>> GetByCategory(Guid categoryId)
     {
-        try
-        {
-            _logger.LogInformation("Buscando transações da categoria: {CategoryId}", categoryId);
-            var transactions = await _transactionService.GetByCategoryIdAsync(categoryId);
+        _logger.LogInformation("Buscando transações da categoria: {CategoryId}", categoryId);
+        var transactions = await _transactionService.GetByCategoryIdAsync(categoryId);
 
-            _logger.LogInformation("Encontradas {Count} transações da categoria {CategoryId}",
-                transactions.Count(), categoryId);
+        _logger.LogInformation("Encontradas {Count} transações da categoria {CategoryId}",
+            transactions.Count(), categoryId);
 
-            return Ok(transactions);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao buscar transações por categoria: {CategoryId}", categoryId);
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao buscar transações por categoria" });
-        }
+        return Ok(transactions);
     }
 
     /// <summary>
@@ -169,27 +132,18 @@ public class TransactionsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IEnumerable<TransactionDto>>> GetByType(string type)
     {
-        try
+        if (!Enum.TryParse<TransactionType>(type, true, out var transactionType))
         {
-            if (!Enum.TryParse<TransactionType>(type, true, out var transactionType))
-            {
-                _logger.LogWarning("Tipo de transação inválido: {Type}", type);
-                return BadRequest(new { message = $"Tipo de transação inválido: {{type}}. Use 'Income' ou 'Expense'" });
-            }
-
-            _logger.LogInformation("Buscando transações do tipo: {TransactionType}", transactionType);
-            var transactions = await _transactionService.GetByTransactionTypeAsync(transactionType);
-
-            _logger.LogInformation("Encontradas {Count} transações do tipo {TransactionType}",
-                transactions.Count(), transactionType);
-            return Ok(transactions);
+            _logger.LogWarning("Tipo de transação inválido: {Type}", type);
+            return BadRequest(new { message = $"Tipo de transação inválido: {{type}}. Use 'Income' ou 'Expense'" });
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao buscar transações por tipo: {Type}", type);
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao buscar transações por tipo" });
-        }
+
+        _logger.LogInformation("Buscando transações do tipo: {TransactionType}", transactionType);
+        var transactions = await _transactionService.GetByTransactionTypeAsync(transactionType);
+
+        _logger.LogInformation("Encontradas {Count} transações do tipo {TransactionType}",
+            transactions.Count(), transactionType);
+        return Ok(transactions);
     }
     
     /// <summary>
@@ -207,31 +161,17 @@ public class TransactionsController : ControllerBase
         [FromQuery] DateTime startDate,
         [FromQuery] DateTime endDate)
     {
-        try
+        if (startDate > endDate)
         {
-            if (startDate > endDate)
-            {
-                return BadRequest(new { message = "A data inicial não pode ser maior que a data final" });
-            }
+            return BadRequest(new { message = "A data inicial não pode ser maior que a data final" });
+        }
 
-            _logger.LogInformation("Buscando transações do período: {StartDate} a {EndDate}",
-                startDate.ToString("yyyy-MM-dd"), endDate.ToString("yyyy-MM-dd"));
-            var transactions = await _transactionService.GetByDateRangeAsync(startDate, endDate);
+        _logger.LogInformation("Buscando transações do período: {StartDate} a {EndDate}",
+            startDate.ToString("yyyy-MM-dd"), endDate.ToString("yyyy-MM-dd"));
+        var transactions = await _transactionService.GetByDateRangeAsync(startDate, endDate);
 
-            _logger.LogInformation("Encontradas {Count} transações no período", transactions.Count());
-            return Ok(transactions);
-        }
-        catch (DomainException ex)
-        {
-            _logger.LogWarning(ex, "Período inválido: {StartDate} a {EndDate}", startDate, endDate);
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao buscar transações por período");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao buscar transações por período" });
-        }
+        _logger.LogInformation("Encontradas {Count} transações no período", transactions.Count());
+        return Ok(transactions);
     }
     
     /// <summary>
@@ -243,20 +183,11 @@ public class TransactionsController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<TransactionDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<TransactionDto>>> GetCurrentMonth()
     {
-        try
-        {
-            _logger.LogInformation("Buscando transações do mês atual");
-            var transactions = await _transactionService.GetCurrentMonthTransactionsAsync();
+        _logger.LogInformation("Buscando transações do mês atual");
+        var transactions = await _transactionService.GetCurrentMonthTransactionsAsync();
 
-            _logger.LogInformation("Encontradas {Count} transações do mês atual", transactions.Count());
-            return Ok(transactions);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao buscar transações do mês atual");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao buscar transações do mês atual" });
-        }
+        _logger.LogInformation("Encontradas {Count} transações do mês atual", transactions.Count());
+        return Ok(transactions);
     }
 
     /// <summary>
@@ -268,20 +199,11 @@ public class TransactionsController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<TransactionDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<TransactionDto>>> GetToday()
     {
-        try
-        {
-            _logger.LogInformation("Buscando transações de hoje");
-            var transactions = await _transactionService.GetTodayTransactionsAsync();
+        _logger.LogInformation("Buscando transações de hoje");
+        var transactions = await _transactionService.GetTodayTransactionsAsync();
 
-            _logger.LogInformation("Encontradas {Count} transações de hoje", transactions.Count());
-            return Ok(transactions);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao buscar transações de hoje");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao buscar transações de hoje" });
-        }
+        _logger.LogInformation("Encontradas {Count} transações de hoje", transactions.Count());
+        return Ok(transactions);
     }
 
     /// <summary>
@@ -301,36 +223,22 @@ public class TransactionsController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
     {
-        try
+        if (string.IsNullOrWhiteSpace(q))
         {
-            if (string.IsNullOrWhiteSpace(q))
-            {
-                return BadRequest(new { message = "Termo de busca é obrigatório" });
-            }
-
-            if (q.Length < 2)
-            {
-                return BadRequest(new { message = "Termo de busca deve ter pelo menos 2 caracteres" });
-            }
-
-            _logger.LogInformation("Buscando transações com termo: {SearchTerm}", q);
-            var result = await _transactionService.SearchPagedAsync(q, page, Math.Min(pageSize, 100));
-
-            _logger.LogInformation("Encontradas {TotalCount} transações com o termo '{SearchTerm}'",
-                result.TotalCount, q);
-            return Ok(result);
+            return BadRequest(new { message = "Termo de busca é obrigatório" });
         }
-        catch (DomainException ex)
+
+        if (q.Length < 2)
         {
-            _logger.LogWarning(ex, "Termo de busca inválido: {SearchTerm}", q);
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = "Termo de busca deve ter pelo menos 2 caracteres" });
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao buscar transações por texto: {SearchTerm}", q);
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao buscar transações" });
-        }
+
+        _logger.LogInformation("Buscando transações com termo: {SearchTerm}", q);
+        var result = await _transactionService.SearchPagedAsync(q, page, Math.Min(pageSize, 100));
+
+        _logger.LogInformation("Encontradas {TotalCount} transações com o termo '{SearchTerm}'",
+            result.TotalCount, q);
+        return Ok(result);
     }
     
     /// <summary>
@@ -345,41 +253,20 @@ public class TransactionsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<TransactionDto>> Create([FromBody] CreateTransactionDto createDto)
     {
-        try
+        if (!ModelState.IsValid)
         {
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Dados inválidos para criação de transação: {Errors}",
-                    string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
-                return BadRequest(ModelState);
-            }
-
-            _logger.LogInformation("Criando nova transação: {Description}, Valor: {Amount}",
-                createDto.Description, createDto.Amount);
-
-            var transaction = await _transactionService.CreateAsync(createDto);
-            _logger.LogInformation("Transação criada com sucesso. ID: {TransactionId}", transaction.Id);
-
-            return CreatedAtAction(nameof(GetById), new { id = transaction.Id }, transaction);
+            _logger.LogWarning("Dados inválidos para criação de transação: {Errors}",
+                string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
+            return BadRequest(ModelState);
         }
-        catch (DomainException ex)
-        {
-            _logger.LogWarning(ex, "Dados inválidos para criação de transação: {Description}",
-                createDto?.Description);
 
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (ArgumentNullException ex)
-        {
-            _logger.LogWarning(ex, "DTO nulo para criação de transação");
-            return BadRequest(new { message = "Dados da transação são obrigatórios" });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao criar transação: {Description}", createDto?.Description);
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao criar transação" });
-        }
+        _logger.LogInformation("Criando nova transação: {Description}, Valor: {Amount}",
+            createDto.Description, createDto.Amount);
+
+        var transaction = await _transactionService.CreateAsync(createDto);
+        _logger.LogInformation("Transação criada com sucesso. ID: {TransactionId}", transaction.Id);
+
+        return CreatedAtAction(nameof(GetById), new { id = transaction.Id }, transaction);
     }
 
     /// <summary>
@@ -397,35 +284,16 @@ public class TransactionsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<TransactionDto>> Update([FromRoute] Guid id, UpdateTransactionDto updateDto)
     {
-        try
+        if (!ModelState.IsValid)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            return BadRequest(ModelState);
+        }
 
-            _logger.LogInformation("Atualizando transação: {TransactionId}", id);
-            var transaction = await _transactionService.UpdateAsync(id, updateDto);
+        _logger.LogInformation("Atualizando transação: {TransactionId}", id);
+        var transaction = await _transactionService.UpdateAsync(id, updateDto);
 
-            _logger.LogInformation("Transação atualizada com sucesso: {TransactionId}", id);
-            return Ok(transaction);
-        }
-        catch (DomainException ex) when (ex.Message.Contains("não foi encontrada"))
-        {
-            _logger.LogWarning(ex, "Transação não encontrada para atualização: {TransactionId}", id);
-            return NotFound(new { message = ex.Message });
-        }
-        catch (DomainException ex)
-        {
-            _logger.LogWarning(ex, "Dados inválidos para atualização da transação: {TransactionId}", id);
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao atualizar transação: {TransactionId}", id);
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao atualizar transação" });
-        }
+        _logger.LogInformation("Transação atualizada com sucesso: {TransactionId}", id);
+        return Ok(transaction);
     }
 
     /// <summary>
@@ -440,25 +308,11 @@ public class TransactionsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id)
     {
-        try
-        {
-            _logger.LogInformation("Excluindo transação: {TransactionId}", id);
-            await _transactionService.DeleteAsync(id);
+        _logger.LogInformation("Excluindo transação: {TransactionId}", id);
+        await _transactionService.DeleteAsync(id);
 
-            _logger.LogInformation("Transação excluída com sucesso: {TransactionId}", id);
-            return NoContent();
-        }
-        catch (DomainException ex) when (ex.Message.Contains("não foi encontrada"))
-        {
-            _logger.LogWarning(ex, "Transação não encontrada para exclusão: {TransactionId}", id);
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao excluir transação: {TransactionId}", id);
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao excluir transação" });
-        }
+        _logger.LogInformation("Transação excluída com sucesso: {TransactionId}", id);
+        return NoContent();
     }
     
     /// <summary>
@@ -470,36 +324,27 @@ public class TransactionsController : ControllerBase
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<ActionResult<object>> GetStatistics()
     {
-        try
+        _logger.LogInformation("Buscando estatísticas das transações");
+        var totalCount = await _transactionService.GetTotalCountAsync();
+        var totalIncome = await _transactionService.GetTotalByTypeAsync(TransactionType.Income);
+        var totalExpenses = await _transactionService.GetTotalByTypeAsync(TransactionType.Expense);
+        var balance = await _transactionService.GetBalanceAsync();
+        var incomeCount = await _transactionService.GetCountByTypeAsync(TransactionType.Income);
+        var expenseCount = await _transactionService.GetCountByTypeAsync(TransactionType.Expense);
+        
+        var stats = new
         {
-            _logger.LogInformation("Buscando estatísticas das transações");
-            var totalCount = await _transactionService.GetTotalCountAsync();
-            var totalIncome = await _transactionService.GetTotalByTypeAsync(TransactionType.Income);
-            var totalExpenses = await _transactionService.GetTotalByTypeAsync(TransactionType.Expense);
-            var balance = await _transactionService.GetBalanceAsync();
-            var incomeCount = await _transactionService.GetCountByTypeAsync(TransactionType.Income);
-            var expenseCount = await _transactionService.GetCountByTypeAsync(TransactionType.Expense);
-            
-            var stats = new
-            {
-                TotalCount = totalCount,
-                TotalIncome = totalIncome,
-                TotalExpenses = totalExpenses,
-                Balance = balance,
-                IncomeCount = incomeCount,
-                ExpenseCount = expenseCount
-            };
+            TotalCount = totalCount,
+            TotalIncome = totalIncome,
+            TotalExpenses = totalExpenses,
+            Balance = balance,
+            IncomeCount = incomeCount,
+            ExpenseCount = expenseCount
+        };
 
-            _logger.LogInformation("Estatísticas calculadas: {TotalTransactions} transações, Saldo: {Balance:C}",
-                totalCount, balance);
-            return Ok(stats);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao buscar estatísticas das transações");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao buscar estatísticas" });
-        }
+        _logger.LogInformation("Estatísticas calculadas: {TotalTransactions} transações, Saldo: {Balance:C}",
+            totalCount, balance);
+        return Ok(stats);
     }
 
     /// <summary>
@@ -517,49 +362,35 @@ public class TransactionsController : ControllerBase
         [FromQuery] DateTime startDate,
         [FromQuery] DateTime endDate)
     {
-        try
+        if (startDate > endDate)
         {
-            if (startDate > endDate)
+            return BadRequest(new { message = "A data inicial não pode ser maior que a data final" });
+        }
+
+        _logger.LogInformation("Buscando estatísticas do período: {StartDate} a {EndDate}",
+            startDate.ToString("yyyy-MM-dd"), endDate.ToString("yyyy-MM-dd"));
+
+        var totalIncome =
+            await _transactionService.GetTotalByTypeAndPeriodAsync(TransactionType.Income, startDate, endDate);
+        var totalExpenses =
+            await _transactionService.GetTotalByTypeAndPeriodAsync(TransactionType.Expense, startDate, endDate);
+        var balance = await _transactionService.GetBalanceByPeriodAsync(startDate, endDate);
+
+        var stats = new
+        {
+            period = new
             {
-                return BadRequest(new { message = "A data inicial não pode ser maior que a data final" });
-            }
+                startDate = startDate.ToString("yyyy-MM-dd"),
+                endDate = endDate.ToString("yyyy-MM-dd")
+            },
+            totalIncome,
+            totalExpenses,
+            balance,
+            formattedTotalIncome = $"R$ {totalIncome:N2}",
+            formattedTotalExpenses = $"R$ {totalExpenses:N2}",
+            formattedBalance = $"R$ {balance:N2}"
+        };
 
-            _logger.LogInformation("Buscando estatísticas do período: {StartDate} a {EndDate}",
-                startDate.ToString("yyyy-MM-dd"), endDate.ToString("yyyy-MM-dd"));
-
-            var totalIncome =
-                await _transactionService.GetTotalByTypeAndPeriodAsync(TransactionType.Income, startDate, endDate);
-            var totalExpenses =
-                await _transactionService.GetTotalByTypeAndPeriodAsync(TransactionType.Expense, startDate, endDate);
-            var balance = await _transactionService.GetBalanceByPeriodAsync(startDate, endDate);
-
-            var stats = new
-            {
-                period = new
-                {
-                    startDate = startDate.ToString("yyyy-MM-dd"),
-                    endDate = endDate.ToString("yyyy-MM-dd")
-                },
-                totalIncome,
-                totalExpenses,
-                balance,
-                formattedTotalIncome = $"R$ {totalIncome:N2}",
-                formattedTotalExpenses = $"R$ {totalExpenses:N2}",
-                formattedBalance = $"R$ {balance:N2}"
-            };
-
-            return Ok(stats);
-        }
-        catch (DomainException ex)
-        {
-            _logger.LogWarning(ex, "Período inválido para estatísticas");
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao buscar estatísticas por período");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao buscar estatísticas do período" });
-        }
+        return Ok(stats);
     }
 }

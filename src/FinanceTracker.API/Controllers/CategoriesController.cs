@@ -30,19 +30,9 @@ public class CategoriesController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<CategoryDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategories()
     {
-        try
-        {
-            _logger.LogInformation("Buscando todas as categorias");
-            var categories = await _categoryService.GetAllAsync();
-            return Ok(categories);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex.Message, "Erro ao buscar todas as categorias");
-
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao buscar todas as categorias" });
-        }
+        _logger.LogInformation("Buscando todas as categorias");
+        var categories = await _categoryService.GetAllAsync();
+        return Ok(categories);
     }
 
     /// <summary>
@@ -57,24 +47,10 @@ public class CategoriesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CategoryDto>> GetCategoryById(Guid id)
     {
-        try
-        {
-            _logger.LogInformation("Buscando categoria com ID: {CategoryId}", id);
-            var category = await _categoryService.GetByIdAsync(id);
-            _logger.LogInformation("Categoria encontrada: {CategoryName}", category.Name);
-            return Ok(category);
-        }
-        catch (DomainException ex)
-        {
-            _logger.LogWarning(ex, "Categoria não encontrada: {CategoryId}", id);
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao buscar categoria: {CategoryId}", id);
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao buscar a categoria" });
-        }
+        _logger.LogInformation("Buscando categoria com ID: {CategoryId}", id);
+        var category = await _categoryService.GetByIdAsync(id);
+        _logger.LogInformation("Categoria encontrada: {CategoryName}", category.Name);
+        return Ok(category);
     }
 
     /// <summary>
@@ -86,18 +62,9 @@ public class CategoriesController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<CategorySummaryDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<CategorySummaryDto>>> GetCategorySummaries()
     {
-        try
-        {
-            _logger.LogInformation("Buscando resumos de categorias");
-            var summaries = await _categoryService.GetSummariesAsync();
-            return Ok(summaries);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao buscar resumos de categorias");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao buscar resumos de categorias" });
-        }
+        _logger.LogInformation("Buscando resumos de categorias");
+        var summaries = await _categoryService.GetSummariesAsync();
+        return Ok(summaries);
     }
 
     /// <summary>
@@ -112,28 +79,19 @@ public class CategoriesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategoriesByType(string type)
     {
-        try
+        if (!Enum.TryParse<TransactionType>(type, true, out var transactionType))
         {
-            if (!Enum.TryParse<TransactionType>(type, true, out var transactionType))
-            {
-                _logger.LogWarning("Tipo de transação inválido: {Type}", type);
-                return BadRequest(new { message = "Tipo de transação inválido. Use 'Income' ou 'Expense'." });
-            }
-
-            _logger.LogInformation("Buscando categorias do tipo: {Type}", transactionType);
-            var categories = await _categoryService.GetByTransactionTypeAsync(transactionType);
-
-            _logger.LogInformation("Encontradas {Count} categorias do tipo {TransactionType}",
-                categories.Count(), transactionType);
-
-            return Ok(categories);
+            _logger.LogWarning("Tipo de transação inválido: {Type}", type);
+            return BadRequest(new { message = "Tipo de transação inválido. Use 'Income' ou 'Expense'." });
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao buscar categorias do tipo: {Type}", type);
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao buscar categorias por tipo" });
-        }
+
+        _logger.LogInformation("Buscando categorias do tipo: {Type}", transactionType);
+        var categories = await _categoryService.GetByTransactionTypeAsync(transactionType);
+
+        _logger.LogInformation("Encontradas {Count} categorias do tipo {TransactionType}",
+            categories.Count(), transactionType);
+
+        return Ok(categories);
     }
 
     /// <summary>
@@ -145,19 +103,10 @@ public class CategoriesController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<CategoryDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<CategoryDto>>> GetExpenseCategories()
     {
-        try
-        {
-            _logger.LogInformation("Buscando categorias de despesa");
-            var categories = await _categoryService.GetExpenseCategoriesAsync();
+        _logger.LogInformation("Buscando categorias de despesa");
+        var categories = await _categoryService.GetExpenseCategoriesAsync();
 
-            return Ok(categories);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao buscar categorias de despesa");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao buscar categorias de despesa" });
-        }
+        return Ok(categories);
     }
 
     /// <summary>
@@ -169,19 +118,10 @@ public class CategoriesController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<CategoryDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<CategoryDto>>> GetIncomeCategories()
     {
-        try
-        {
-            _logger.LogInformation("Buscando categorias de receita");
-            var categories = await _categoryService.GetIncomeCategoriesAsync();
+        _logger.LogInformation("Buscando categorias de receita");
+        var categories = await _categoryService.GetIncomeCategoriesAsync();
 
-            return Ok(categories);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao buscar categorias de receita");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao buscar categorias de receita" });
-        }
+        return Ok(categories);
     }
 
     /// <summary>
@@ -198,42 +138,18 @@ public class CategoriesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<CategoryDto>> CreateCategory([FromBody] CreateCategoryDto createDto)
     {
-        try
+        if (!ModelState.IsValid)
         {
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Dados inválidos para criação de categoria: {Errors}",
-                    string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
-                return BadRequest(ModelState);
-            }
+            _logger.LogWarning("Dados inválidos para criação de categoria: {Errors}",
+                string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
+            return BadRequest(ModelState);
+        }
 
-            _logger.LogInformation("Criando nova categoria: {CategoryName}", createDto.Name);
-            var category = await _categoryService.CreateAsync(createDto);
+        _logger.LogInformation("Criando nova categoria: {CategoryName}", createDto.Name);
+        var category = await _categoryService.CreateAsync(createDto);
 
-            _logger.LogInformation("Categoria criada com sucesso: {CategoryId}", category.Id);
-            return CreatedAtAction(nameof(GetCategoryById), new { id = category.Id }, category);
-        }
-        catch (DomainException ex) when (ex.Message.Contains("já existe"))
-        {
-            _logger.LogWarning(ex, "Tentativa de criar categoria com nome duplicado: {CategoryName}", createDto.Name);
-            return Conflict(new { message = ex.Message });
-        }
-        catch (DomainException ex)
-        {
-            _logger.LogWarning(ex, "Dados inválidos para criação de categoria: {CategoryName}", createDto.Name);
-            return BadRequest(ex.Message);
-        }
-        catch (ArgumentNullException ex)
-        {
-            _logger.LogWarning(ex, "DTO nulo para criação de categoria");
-            return BadRequest(new { message = "Dados da categoria são obrigatórios" });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao criar categoria: {CategoryName}", createDto.Name);
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao criar a categoria" });
-        }
+        _logger.LogInformation("Categoria criada com sucesso: {CategoryId}", category.Id);
+        return CreatedAtAction(nameof(GetCategoryById), new { id = category.Id }, category);
     }
 
     /// <summary>
@@ -253,39 +169,15 @@ public class CategoriesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<CategoryDto>> Update(Guid id, [FromBody] UpdateCategoryDto updateDto)
     {
-        try
+        if (!ModelState.IsValid)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            return BadRequest(ModelState);
+        }
 
-            _logger.LogInformation("Atualizando categoria: {CategoryId}", id);
-            var category = await _categoryService.UpdateAsync(id, updateDto);
+        _logger.LogInformation("Atualizando categoria: {CategoryId}", id);
+        var category = await _categoryService.UpdateAsync(id, updateDto);
 
-            return Ok(category);
-        }
-        catch (DomainException ex) when (ex.Message.Contains("não foi encontrada"))
-        {
-            _logger.LogWarning(ex, "Categoria não encontrada para atualização: {CategoryId}", id);
-            return NotFound(new { message = ex.Message });
-        }
-        catch (DomainException ex) when (ex.Message.Contains("já existe"))
-        {
-            _logger.LogWarning(ex, "Nome de categoria já existe: {CategoryName}", updateDto.Name);
-            return Conflict(new { message = ex.Message });
-        }
-        catch (DomainException ex)
-        {
-            _logger.LogWarning(ex, "Dados inválidos para atualização da categoria: {CategoryId}", id);
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao atualizar categoria: {CategoryId}", id);
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao atualizar a categoria" });
-        }
+        return Ok(category);
     }
 
     /// <summary>
@@ -300,29 +192,20 @@ public class CategoriesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<object>> CanDelete(Guid id)
     {
-        try
-        {
-            var canDelete = await _categoryService.CanDeleteAsync(id);
+        var canDelete = await _categoryService.CanDeleteAsync(id);
 
-            if (!await _categoryService.ExistsAsync(id))
-            {
-                return NotFound(new { message = "Categoria não encontrada" });
-            }
-
-            return Ok(new
-            {
-                canDelete,
-                message = canDelete
-                    ? "Categoria pode ser excluída"
-                    : "Categoria não pode ser excluída pois possui transações associadas"
-            });
-        }
-        catch (Exception ex)
+        if (!await _categoryService.ExistsAsync(id))
         {
-            _logger.LogError(ex, "Erro ao verificar se categoria pode ser excluída: {CategoryId}", id);
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor." });
+            return NotFound(new { message = "Categoria não encontrada" });
         }
+
+        return Ok(new
+        {
+            canDelete,
+            message = canDelete
+                ? "Categoria pode ser excluída"
+                : "Categoria não pode ser excluída pois possui transações associadas"
+        });
     }
 
     /// <summary>
@@ -339,58 +222,30 @@ public class CategoriesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Delete(Guid id)
     {
-        try
-        {
-            _logger.LogInformation("Excluindo categoria: {CategoryId}", id);
-            await _categoryService.DeleteAsync(id);
+        _logger.LogInformation("Excluindo categoria: {CategoryId}", id);
+        await _categoryService.DeleteAsync(id);
 
-            _logger.LogInformation("Categoria excluída com sucesso: {CategoryId}", id);
-            return NoContent();
-        }
-        catch (DomainException ex) when (ex.Message.Contains("não foi encontrada"))
-        {
-            _logger.LogWarning(ex, "Categoria não encontrada para exclusão: {CategoryId}", id);
-            return NotFound(new { message = ex.Message });
-        }
-        catch (DomainException ex) when (ex.Message.Contains("transações associadas"))
-        {
-            _logger.LogWarning(ex, "Tentativa de excluir categoria com transações: {CategoryId}", id);
-            return Conflict(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao excluir categoria: {CategoryId}", id);
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao excluir a categoria" });
-        }
+        _logger.LogInformation("Categoria excluída com sucesso: {CategoryId}", id);
+        return NoContent();
     }
 
     [HttpGet("stats")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<ActionResult<object>> GetStats()
     {
-        try
-        {
-            var totalCount = await _categoryService.GetTotalCountAsync();
-            var expensesCategory = await _categoryService.GetExpenseCategoriesAsync();
-            var incomesCategory = await _categoryService.GetIncomeCategoriesAsync();
-            var categoriesWithTransactions = await _categoryService.GetCategoriesWithTransactionsAsync();
+        var totalCount = await _categoryService.GetTotalCountAsync();
+        var expensesCategory = await _categoryService.GetExpenseCategoriesAsync();
+        var incomesCategory = await _categoryService.GetIncomeCategoriesAsync();
+        var categoriesWithTransactions = await _categoryService.GetCategoriesWithTransactionsAsync();
 
-            var stats = new
-            {
-                totalCount,
-                expensesCategoryCount = expensesCategory.Count(),
-                incomesCategoryCount = incomesCategory.Count(),
-                categoriesWithTransactionsCount = categoriesWithTransactions.Count()
-            };
-
-            return Ok(stats);
-        }
-        catch (Exception ex)
+        var stats = new
         {
-            _logger.LogError(ex, "Erro ao obter estatísticas de categorias");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao obter estatísticas de categorias" });
-        }
+            totalCount,
+            expensesCategoryCount = expensesCategory.Count(),
+            incomesCategoryCount = incomesCategory.Count(),
+            categoriesWithTransactionsCount = categoriesWithTransactions.Count()
+        };
+
+        return Ok(stats);
     }
 }

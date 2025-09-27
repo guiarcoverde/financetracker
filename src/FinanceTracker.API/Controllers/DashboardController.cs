@@ -28,21 +28,12 @@ public class DashboardController : ControllerBase
     [ProducesResponseType(typeof(DashboardDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<DashboardDto>> GetDashboard()
     {
-        try
-        {
-            _logger.LogInformation("Carregando dashboard completo");
-            var dashboard = await _dashboardService.GetDashboardAsync();
-            
-            _logger.LogInformation("Dashboard carregado - Saldo atual: {CurrentBalance}, Transações recentes: {RecentCount}", 
-                dashboard.CurrentMonth.FormattedBalance, dashboard.RecentTransactions.Count());
-            return Ok(dashboard);
-        } 
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao carregar dashboard completo");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao carregar dashboard" });
-        }
+        _logger.LogInformation("Carregando dashboard completo");
+        var dashboard = await _dashboardService.GetDashboardAsync();
+        
+        _logger.LogInformation("Dashboard carregado - Saldo atual: {CurrentBalance}, Transações recentes: {RecentCount}", 
+            dashboard.CurrentMonth.FormattedBalance, dashboard.RecentTransactions.Count());
+        return Ok(dashboard);
     }
 
     /// <summary>
@@ -60,36 +51,22 @@ public class DashboardController : ControllerBase
         [FromQuery] DateTime startDate,
         [FromQuery] DateTime endDate)
     {
-        try
+        if (startDate > endDate)
         {
-            if (startDate > endDate)
-            {
-                return BadRequest(new { message = "A data inicial não pode ser maior que a data final" });
-            }
-
-            if (startDate > DateTime.Today)
-            {
-                return BadRequest(new { message = "A data inicial não pode ser futura" });
-            }
-
-            _logger.LogInformation("Carregando dashboard para período: {StartDate} a {EndDate}",
-                startDate.ToString("yyyy-MM-dd"), endDate.ToString("yyyy-MM-dd"));
-
-            var dashboard = await _dashboardService.GetDashboardForPeriodAsync(startDate, endDate);
-
-            return Ok(dashboard);
+            return BadRequest(new { message = "A data inicial não pode ser maior que a data final" });
         }
-        catch (DomainException ex)
+
+        if (startDate > DateTime.Today)
         {
-            _logger.LogWarning(ex, "Período inválido para dashboard: {StartDate} a {EndDate}", startDate, endDate);
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = "A data inicial não pode ser futura" });
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao carregar dashboard para período");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao carregar dashboard do período" });
-        }
+
+        _logger.LogInformation("Carregando dashboard para período: {StartDate} a {EndDate}",
+            startDate.ToString("yyyy-MM-dd"), endDate.ToString("yyyy-MM-dd"));
+
+        var dashboard = await _dashboardService.GetDashboardForPeriodAsync(startDate, endDate);
+
+        return Ok(dashboard);
     }
 
     /// <summary>
@@ -101,21 +78,12 @@ public class DashboardController : ControllerBase
     [ProducesResponseType(typeof(FinancialSummaryDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<FinancialSummaryDto>> GetCurrentMonthSummary()
     {
-        try
-        {
-            _logger.LogInformation("Carregando resumo do mês atual");
-            var summary = await _dashboardService.GetCurrentMonthSummaryAsync();
+        _logger.LogInformation("Carregando resumo do mês atual");
+        var summary = await _dashboardService.GetCurrentMonthSummaryAsync();
 
-            _logger.LogInformation("Resumo do mês atual - Receitas: {Income}, Despesas: {Expenses}, Saldo: {Balance}",
-                summary.FormattedTotalIncome, summary.FormattedTotalExpenses, summary.FormattedBalance);
-            return Ok(summary);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao carregar resumo do mês atual");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao carregar resumo do mês" });
-        }
+        _logger.LogInformation("Resumo do mês atual - Receitas: {Income}, Despesas: {Expenses}, Saldo: {Balance}",
+            summary.FormattedTotalIncome, summary.FormattedTotalExpenses, summary.FormattedBalance);
+        return Ok(summary);
     }
 
     /// <summary>
@@ -127,19 +95,10 @@ public class DashboardController : ControllerBase
     [ProducesResponseType(typeof(FinancialSummaryDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<FinancialSummaryDto>> GetLastMonthSummary()
     {
-        try
-        {
-            _logger.LogInformation("Carregando resumo do mês anterior");
-            var summary = await _dashboardService.GetLastMonthSummaryAsync();
+        _logger.LogInformation("Carregando resumo do mês anterior");
+        var summary = await _dashboardService.GetLastMonthSummaryAsync();
 
-            return Ok(summary);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao carregar resumo do mês anterior");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao carregar resumo do mês anterior" });
-        }
+        return Ok(summary);
     }
     
     /// <summary>
@@ -151,19 +110,10 @@ public class DashboardController : ControllerBase
     [ProducesResponseType(typeof(FinancialSummaryDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<FinancialSummaryDto>> GetCurrentYearSummary()
     {
-        try
-        {
-            _logger.LogInformation("Carregando resumo do ano atual");
-            var summary = await _dashboardService.GetCurrentYearSummaryAsync();
+        _logger.LogInformation("Carregando resumo do ano atual");
+        var summary = await _dashboardService.GetCurrentYearSummaryAsync();
 
-            return Ok(summary);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao carregar resumo do ano atual");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao carregar resumo do ano" });
-        }
+        return Ok(summary);
     }
 
     /// <summary>
@@ -181,31 +131,17 @@ public class DashboardController : ControllerBase
         [FromQuery] DateTime startDate,
         [FromQuery] DateTime endDate)
     {
-        try
+        if (startDate > endDate)
         {
-            if (startDate > endDate)
-            {
-                return BadRequest(new { message = "A data inicial não pode ser maior que a data final" });
-            }
-
-            _logger.LogInformation("Carregando resumo para período: {StartDate} a {EndDate}",
-                startDate.ToString("yyyy-MM-dd"), endDate.ToString("yyyy-MM-dd"));
-
-            var summary = await _dashboardService.GetSummaryForPeriodAsync(startDate, endDate);
-
-            return Ok(summary);
+            return BadRequest(new { message = "A data inicial não pode ser maior que a data final" });
         }
-        catch (DomainException ex)
-        {
-            _logger.LogWarning(ex, "Período inválido para resumo");
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao carregar resumo para período");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao carregar resumo do período" });
-        }
+
+        _logger.LogInformation("Carregando resumo para período: {StartDate} a {EndDate}",
+            startDate.ToString("yyyy-MM-dd"), endDate.ToString("yyyy-MM-dd"));
+
+        var summary = await _dashboardService.GetSummaryForPeriodAsync(startDate, endDate);
+
+        return Ok(summary);
     }
 
     /// <summary>
@@ -223,42 +159,28 @@ public class DashboardController : ControllerBase
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null)
     {
-        try
+        if (startDate.HasValue && endDate.HasValue && startDate > endDate)
         {
-            if (startDate.HasValue && endDate.HasValue && startDate > endDate)
-            {
-                return BadRequest(new { message = "A data inicial não pode ser maior que a data final" });
-            }
+            return BadRequest(new { message = "A data inicial não pode ser maior que a data final" });
+        }
 
-            IEnumerable<CategoryStatsDto> stats;
+        IEnumerable<CategoryStatsDto> stats;
 
-            if (startDate.HasValue && endDate.HasValue)
-            {
-                _logger.LogInformation("Carregando estatísticas de categorias para período: {StartDate} a {EndDate}",
-                    startDate.Value.ToString("yyyy-MM-dd"), endDate.Value.ToString("yyyy-MM-dd"));
-                
-                stats = await _dashboardService.GetCategoryStatsForPeriodAsync(startDate.Value, endDate.Value);
-            }
-            else
-            {
-                _logger.LogInformation("Carregando estatísticas de categorias do mês atual");
-                stats = await _dashboardService.GetCategoryStatsAsync();
-            }
+        if (startDate.HasValue && endDate.HasValue)
+        {
+            _logger.LogInformation("Carregando estatísticas de categorias para período: {StartDate} a {EndDate}",
+                startDate.Value.ToString("yyyy-MM-dd"), endDate.Value.ToString("yyyy-MM-dd"));
             
-            _logger.LogInformation("Carregadas estatísticas de {Count} categorias", stats.Count());
-            return Ok(stats);
-        } 
-        catch (DomainException ex)
-        {
-            _logger.LogWarning(ex, "Período inválido para estatísticas de categorias");
-            return BadRequest(new { message = ex.Message });
+            stats = await _dashboardService.GetCategoryStatsForPeriodAsync(startDate.Value, endDate.Value);
         }
-        catch (Exception ex)
+        else
         {
-            _logger.LogError(ex, "Erro ao carregar estatísticas de categorias");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao carregar estatísticas de categorias" });
+            _logger.LogInformation("Carregando estatísticas de categorias do mês atual");
+            stats = await _dashboardService.GetCategoryStatsAsync();
         }
+        
+        _logger.LogInformation("Carregadas estatísticas de {Count} categorias", stats.Count());
+        return Ok(stats);
     }
 
     /// <summary>
@@ -274,23 +196,15 @@ public class DashboardController : ControllerBase
     public async Task<ActionResult<IEnumerable<CategoryStatsDto>>> GetTopExpenseCategories(
         [FromQuery] int limit = 5)
     {
-        try
+        if (limit <= 0 || limit > 20)
         {
-            if (limit <= 0 || limit > 20)
-            {
-                return BadRequest(new { message = "O limite deve ser entre 1 e 20" });
-            }
-            
-            _logger.LogInformation("Carregando top {Limit} categorias de despesa", limit);
-            var categories = await _dashboardService.GetTopCategoriesByExpenseAsync(limit);
-            
-            return Ok(categories);
-        } catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao carregar top categorias de despesa");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao carregar top categorias de despesa" });
+            return BadRequest(new { message = "O limite deve ser entre 1 e 20" });
         }
+        
+        _logger.LogInformation("Carregando top {Limit} categorias de despesa", limit);
+        var categories = await _dashboardService.GetTopCategoriesByExpenseAsync(limit);
+        
+        return Ok(categories);
     }
     
     /// <summary>
@@ -306,24 +220,15 @@ public class DashboardController : ControllerBase
     public async Task<ActionResult<IEnumerable<CategoryStatsDto>>> GetTopIncomeCategories(
         [FromQuery] int limit = 5)
     {
-        try
+        if (limit <= 0 || limit > 20)
         {
-            if (limit <= 0 || limit > 20)
-            {
-                return BadRequest(new { message = "Limite deve estar entre 1 e 20" });
-            }
-
-            _logger.LogInformation("Carregando top {Limit} categorias de receita", limit);
-            var categories = await _dashboardService.GetTopCategoriesByIncomeAsync(limit);
-
-            return Ok(categories);
+            return BadRequest(new { message = "Limite deve estar entre 1 e 20" });
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao carregar top categorias de receita");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao carregar top categorias de receita" });
-        }
+
+        _logger.LogInformation("Carregando top {Limit} categorias de receita", limit);
+        var categories = await _dashboardService.GetTopCategoriesByIncomeAsync(limit);
+
+        return Ok(categories);
     }
 
     /// <summary>
@@ -338,28 +243,14 @@ public class DashboardController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IEnumerable<MonthlyStatsDto>>> GetMonthlyTrends([FromQuery] int months = 6)
     {
-        try
+        if (months is <= 0 or > 24)
         {
-            if (months is <= 0 or > 24)
-            {
-                return BadRequest(new { message = "O número de meses deve estar entre 1 e 24" });
-            }
-            
-            _logger.LogInformation("Carregando tendência mensal para os últimos {Months} meses", months);
-            var trends = await _dashboardService.GetMonthlyTrendAsync(months);
-            return Ok(trends);
-        }         
-        catch (DomainException ex)
-        {
-            _logger.LogWarning(ex, "Parâmetro inválido para tendência mensal");
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = "O número de meses deve estar entre 1 e 24" });
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao carregar tendência mensal");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao carregar tendência mensal" });
-        }
+        
+        _logger.LogInformation("Carregando tendência mensal para os últimos {Months} meses", months);
+        var trends = await _dashboardService.GetMonthlyTrendAsync(months);
+        return Ok(trends);
     }
 
     /// <summary>
@@ -375,28 +266,14 @@ public class DashboardController : ControllerBase
     public async Task<ActionResult<IEnumerable<RecentTransactionDto>>> GetRecentTransactions(
         [FromQuery] int limit = 10)
     {
-        try
+        if (limit <= 0 || limit > 50)
         {
-            if (limit <= 0 || limit > 50)
-            {
-                return BadRequest(new { message = "O limite deve estar entre 1 e 50" });
-            }
+            return BadRequest(new { message = "O limite deve estar entre 1 e 50" });
+        }
 
-            _logger.LogInformation("Carregando {Limit} transações recentes", limit);
-            var transactions = await _dashboardService.GetRecentTransactionsAsync(limit);
-            return Ok(transactions);
-        }
-        catch (DomainException ex)
-        {
-            _logger.LogWarning(ex, "Limite inválido para transações recentes");
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao carregar transações recentes");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao carregar transações recentes" });
-        }
+        _logger.LogInformation("Carregando {Limit} transações recentes", limit);
+        var transactions = await _dashboardService.GetRecentTransactionsAsync(limit);
+        return Ok(transactions);
     }
     
     /// <summary>
@@ -408,22 +285,13 @@ public class DashboardController : ControllerBase
     [ProducesResponseType(typeof(ComparisonStatsDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<ComparisonStatsDto>> GetMonthOverMonthComparison()
     {
-        try
-        {
-            _logger.LogInformation("Carregando comparação mês atual vs mês anterior");
-            var comparison = await _dashboardService.GetMonthOverMonthComparisonAsync();
+        _logger.LogInformation("Carregando comparação mês atual vs mês anterior");
+        var comparison = await _dashboardService.GetMonthOverMonthComparisonAsync();
 
-            _logger.LogInformation("Comparação mensal - Variação de receitas: {IncomeVariation}%, Variação de despesas: {ExpenseVariation}%",
-                comparison.IncomeVariationPercentage, comparison.ExpenseVariationPercentage);
+        _logger.LogInformation("Comparação mensal - Variação de receitas: {IncomeVariation}%, Variação de despesas: {ExpenseVariation}%",
+            comparison.IncomeVariationPercentage, comparison.ExpenseVariationPercentage);
 
-            return Ok(comparison);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao carregar comparação mensal");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao carregar comparação mensal" });
-        }
+        return Ok(comparison);
     }
 
     /// <summary>
@@ -435,19 +303,10 @@ public class DashboardController : ControllerBase
     [ProducesResponseType(typeof(ComparisonStatsDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<ComparisonStatsDto>> GetYearOverYearComparison()
     {
-        try
-        {
-            _logger.LogInformation("Carregando comparação ano atual vs ano anterior");
-            var comparison = await _dashboardService.GetYearOverYearComparisonAsync();
+        _logger.LogInformation("Carregando comparação ano atual vs ano anterior");
+        var comparison = await _dashboardService.GetYearOverYearComparisonAsync();
 
-            return Ok(comparison);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao carregar comparação anual");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao carregar comparação anual" });
-        }
+        return Ok(comparison);
     }
 
     /// <summary>
@@ -459,21 +318,12 @@ public class DashboardController : ControllerBase
     [ProducesResponseType(typeof(ProjectionDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<ProjectionDto>> GetMonthlyProjections()
     {
-        try
-        {
-            _logger.LogInformation("Carregando projeções mensais");
-            var projection = await _dashboardService.GetMonthlyProjectionAsync();
+        _logger.LogInformation("Carregando projeções mensais");
+        var projection = await _dashboardService.GetMonthlyProjectionAsync();
 
-            _logger.LogInformation("Projeção mensal - Receita: {Income}, Despesa: {Expenses}, Confiança: {Confidence}%",
-                projection.FormattedProjectedIncome, projection.FormattedProjectedExpenses, projection.ConfidenceLevel);
+        _logger.LogInformation("Projeção mensal - Receita: {Income}, Despesa: {Expenses}, Confiança: {Confidence}%",
+            projection.FormattedProjectedIncome, projection.FormattedProjectedExpenses, projection.ConfidenceLevel);
 
-            return Ok(projection);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao carregar projeções mensais");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Erro interno do servidor ao carregar projeções" });
-        }
+        return Ok(projection);
     }
 }
