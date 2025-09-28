@@ -7,8 +7,8 @@ public interface ITokenService
 {
     string GenerateAccessToken(User user);
     string GenerateRefreshToken();
-    string GenerateEmailConfirmationToken();
-    string GeneratePasswordResetToken();
+    string GenerateEmailConfirmationToken(User user);
+    string GeneratePasswordResetToken(User user);
     
     bool ValidateToken(string token, out ClaimsPrincipal? principal);
     bool ValidateEmailConfirmationToken(string token, Guid userId);
